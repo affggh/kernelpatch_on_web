@@ -145,6 +145,7 @@ self.onmessage = function (event) {
                                 const blob = new Blob([newdata], { type: 'application/octet-stream' });
 
                                 this.postMessage(blob);
+                                this.postMessage('done');
                             }
                         );
                     });

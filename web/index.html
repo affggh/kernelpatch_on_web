@@ -288,10 +288,16 @@
 
                     downloadLink.click();
                 } else {
+                    if (event.data == 'done') {
+                        // Terminate worker if recive messaage 'done'
+                        worker.terminate();
+                    }
+
                     outputarea.value += event.data + '\n';
                     outputarea.scrollTop = outputarea.scrollHeight;
                 }
             }
+
         });
 
         function ensureFileInput() {
