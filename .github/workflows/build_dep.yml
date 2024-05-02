@@ -60,12 +60,7 @@ jobs:
       - name: Pack
         run: |
           mkdir -p out
-          for i in $(find web/); do
-            cp -f "$i" "out/"
-          done
-
           cp -f build/kptools* out/
-
           cp -f out/kptools* ${{ github.workspace }}/
 
       - name: Upload artifacts
