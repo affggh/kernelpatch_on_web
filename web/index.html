@@ -1,0 +1,520 @@
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+      {
+        "imports": {
+          "@material/web/": "https://esm.run/@material/web/"
+        }
+      }
+    </script>
+    <script type="module">
+        import '@material/web/all.js';
+        import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
+
+        document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+
+    <link rel="stylesheet" href="index.css">
+    <style>
+        :root {
+            color: var(--md-sys-color-on-surface);
+            background-color: var(--md-sys-color-surface-bright);
+            --md-elevation-level: 1
+        }
+    </style>
+</head>
+
+<body>
+    <md-dialog id="kpminfodialog">
+        <div slot="headline">
+          Module INFO
+        </div>
+        <form style="white-space: pre-wrap; padding:20px" slot="content" id="kpm-content" method="dialog">
+        </form>
+        <div slot="actions">
+          <md-text-button form="kpm-content">Ok</md-text-button>
+        </div>
+      </md-dialog>
+
+    <div style="display: block;flex-grow: 1;">
+        <div style="margin-bottom: 10px;">
+            <h1 style="display: flex;flex:1;padding: 10px; flex-direction: row; justify-content: space-between;"
+                class="md-typescale-display">
+                Kernel Patch on WEB
+                <md-text-button type="button" onclick="location.reload()">
+                    <md-icon>refresh</md-icon>
+                    </md-outlined-button>
+            </h1>
+        </div>
+        <form>
+            <div class="surface" style="margin-bottom: 10px;">
+                <md-elevation></md-elevation>
+                <div class="row">
+                    <md-icon style="padding: 15px;">cloud</md-icon>
+                    <p style="padding: 10px;">
+
+                        Latest kernel patch tag: <b id="channel">Release</b>
+                    </p>
+                    <div style="flex:1"></div>
+                    <span style="padding: 10px;" id="tagname">null</span>
+                </div>
+            </div>
+            <div class="surface" style="margin-bottom: 10px;">
+                <md-elevation></md-elevation>
+                <div class="row">
+                    <div>
+                        <p style="padding-left: 10px;">
+                            kptools version: <i id="kptoolsver">null</i></p>
+                        <p style="padding-left: 10px;">
+                            kpimg version: <i id="kpimgver">null</i></i></p>
+                    </div>
+                    <div style="flex: 1;"></div>
+                    <md-label style="padding: 10px;">switch channel</md-label>
+                    <md-switch style="padding: 10px;" id="channelswitch" value="null"></md-switch>
+                </div>
+            </div>
+
+            <div class="surface" style="margin-bottom: 10px;">
+                <md-elevation></md-elevation>
+                <md-outlined-text-field type="text" style="margin: 5px;display: block;" label="Super key" id="superkey">
+                    <md-icon slot="leading-icon">key</md-icon>
+                </md-outlined-text-field>
+                <input type="file" name="" id="bootimg" style="display: none;">
+                <input type="file" name="" id="kpimginput" style="display: none;">
+                <div class="row" style="display:flex; flex-wrap: wrap;justify-content: space-between; ;">
+                    <md-filled-tonal-button type="button" class="action-button" id="upload">Upload boot
+                        image</md-filled-tonal-button>
+                    <md-filled-tonal-button type="button" class="action-button" id="kpimgup">Upload kpimg
+                        binary</md-filled-tonal-button>
+                    <md-filled-button type="button" class="action-button" id="patch" disabled>Patch</md-filled-button>
+                    <md-outlined-button type="button" class="action-button" id="clear">clear</md-outlined-button>
+                </div>
+            </div>
+
+            <div class="surface">
+                <md-elevation></md-elevation>
+                <div class="row" style="justify-content: space-between;">
+                    <h3 style="padding-left:10px;" class="md-typescale-title">Preload KPM</h3>
+
+                    <md-filled-tonal-button id="addkpm" type="button" style="border-radius: 5px; margin-right: 20px;">
+                        <md-icon slot="icon">add</md-icon>Add
+                    </md-filled-tonal-button>
+                </div>
+                <div id="kpm" style="margin: 20px;">
+                    <!-- KPM LIST HERE -->
+                </div>
+            </div>
+        </form>
+        <div class="output">
+            <textarea spellcheck="false" id="output" style="display:block;width:100%;height:100%"></textarea>
+        </div>
+    </div>
+    <style>
+        @keyframes showup {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        form::-webkit-scrollbar {
+            display: none;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: row;
+            justify-content: start;
+            align-items: center;
+        }
+
+        .surface {
+            transition-duration: 250ms;
+            transition-timing-function: ease-in-out;
+            animation: showup 1s ease-in-out;
+            display: block;
+            position: relative;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: var(--md-sys-color-surface-container);
+        }
+
+        .surface:active {
+            --md-elevation-level: 0;
+        }
+
+        .output {
+            display: block;
+            border-radius: 0%;
+            padding: 10px;
+            position: relative;
+            flex-grow: 1;
+            height: 30vh;
+        }
+
+        /*
+        @media (min-width: 1000px) {
+            form {
+                flex-wrap: wrap;
+            }
+
+            .surface {
+                width: calc(50% - 50px);
+                margin-left: 10px;
+                margin-right: 10px
+            }
+        }
+*/
+        .action-button {
+            flex: 1;
+            margin: 5px;
+
+        }
+
+        md-filled-tonal-button {
+            white-space: nowrap;
+        }
+
+        textarea {
+            color: var(--md-sys-color-on-surface);
+            background-color: var(--md-sys-color-surface-container);
+        }
+
+        a {
+            color: var(--md-sys-color-tertiary);
+        }
+    </style>
+    <script src="utils.js"></script>
+    <script src="kptools.js"></script>
+    <script>
+        var channelswitch = document.getElementById('channelswitch');
+        var uploadbtn = document.getElementById('upload');
+        var fileinput = document.getElementById('bootimg');
+        var kpimgupbtn = document.getElementById('kpimgup');
+        var kpimginput = document.getElementById('kpimginput');
+        var patchbtn = document.getElementById('patch');
+        var clearbtn = document.getElementById('clear');
+        var tagname = document.getElementById('tagname');
+        var kpver = document.getElementById('kptoolsver');
+        var superkey = document.getElementById('superkey');
+        var outputarea = document.getElementById('output');
+        var addkpm = document.getElementById('addkpm');
+
+        var kpdata = new KpData();
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            tagname.textContent = await kpdata.getLatestTag(false);
+            ///console.log('Fetching latest tag:', kputil.fetchLatestTag());
+            // Set kptools version
+            function setVerContent(ver) {
+                kpver.textContent = ver;
+            }
+            kptools(
+                {
+                    noInitialRun: true,
+                    print: setVerContent
+                }
+            ).then(
+                function (mod) {
+                    mod.callMain(['-v']);
+                }
+            );
+        });
+
+        channelswitch.addEventListener('change', async function () {
+            this.value = (this.value == "on") ? "null" : "on";
+            document.getElementById('channel').textContent = (this.value == "on") ? "Prerelease" : "Release";
+            tagname.textContent = await kpdata.getLatestTag((this.value == "on"));
+        });
+
+        uploadbtn.addEventListener('click', function () {
+            fileinput.click();
+        });
+
+        kpimgupbtn.addEventListener('click', function () {
+            kpimginput.click();
+        });
+
+        patchbtn.addEventListener('click', function () {
+            var worker = new Worker('./worker.js');
+            // precheck
+            ensureFileInput();
+
+            if (superkey.value == '') {
+                alert('Please define super key');
+                return;
+            }
+            // construct kpm list
+            var kpmfiles = [];
+
+            var kpmlist = document.getElementById('kpm');
+            var kpmdiv = kpmlist.getElementsByTagName('div');
+            for (let a of kpmdiv) {
+                const file = a.children[0].files[0];
+
+                kpmfiles.push(file);
+            }
+            console.log(kpmfiles);
+
+            var send = [
+                fileinput.files[0],
+                kpimginput.files[0],
+                superkey.value,
+                kpmfiles
+            ]
+
+            worker.postMessage(send);
+            worker.onmessage = function (event) {
+                const processedData = event.data;
+
+                if (typeof event.data === 'object' && event.data instanceof Blob) {
+                    // do download thing
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(event.data);
+                    downloadLink.download = 'new-boot.img';
+
+                    downloadLink.click();
+                } else {
+                    outputarea.value += event.data + '\n';
+                    outputarea.scrollTop = outputarea.scrollHeight;
+                }
+            }
+        });
+
+        function ensureFileInput() {
+            if (fileinput.files[0] && kpimginput.files[0]) {
+                document.getElementById('patch').removeAttribute('disabled')
+            }
+        }
+
+        fileinput.addEventListener('change', function () {
+            var file = this.files[0];
+            console.log(file);
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    function isBootImg(bytes) {
+                        return bytes[0] === 0x41    // A
+                            && bytes[1] === 0x4E    // N
+                            && bytes[2] === 0x44    // D
+                            && bytes[3] === 0x52    // R
+                            && bytes[4] === 0x4F    // O
+                            && bytes[5] === 0x49    // I
+                            && bytes[6] === 0x44;   // D
+                    }
+
+                    const bytes = new Uint8Array(event.target.result.slice(0, 7));
+
+                    if (!isBootImg(bytes)) {
+                        fileinput.value = '';
+                        alert("Boot image not valid!");
+                        return;
+                    }
+                    ensureFileInput();
+                };
+
+                reader.readAsArrayBuffer(file.slice(0, 7));
+            }
+        });
+
+        kpimginput.addEventListener('change', function () {
+            var file = this.files[0];
+            console.log(file);
+
+            // fetch extra kpimg version
+            if (file) {
+                // check if valid kpimg
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    function isKpimg(bytes) {
+                        return bytes[0] === 0x4B    // K
+                            && bytes[1] === 0x50    // P
+                            && bytes[2] === 0x31    // 1
+                            && bytes[3] === 0x31    // 1
+                            && bytes[4] === 0x35    // 5
+                            && bytes[5] === 0x38;   // 8
+                    }
+
+                    // do a simple magic check
+                    const bytes = new Uint8Array(event.target.result.slice(0, 6));
+                    if (!isKpimg(bytes)) {
+                        kpimginput.value = '';
+                        alert("File upload seems not a valid kpimg");
+                        return;
+                    }
+
+                    kptools(
+                        {
+                            noInitialRun: true,
+                            print: (msg) => {
+                                console.log("get kpimg version:", msg);
+                                document.getElementById('kpimgver').textContent = msg;
+                            }
+                        }
+                    ).then(function (mod) {
+                        const reader = new FileReader();
+
+                        reader.onload = function (event) {
+                            const data = new Uint8Array(event.target.result)
+
+                            mod.FS.writeFile('/home/web_user/kpimg', data);
+
+                            mod.callMain([
+                                '-v', '-k', '/home/web_user/kpimg'
+                            ]);
+                        }
+
+                        reader.readAsArrayBuffer(file);
+                    });
+                    ensureFileInput();
+                }
+
+                reader.readAsArrayBuffer(file.slice(0, 6));
+            }
+
+        });
+
+
+        clearbtn.addEventListener('click', function () {
+            document.getElementById('output').value = '';
+        });
+
+        addkpm.addEventListener('click', function () {
+            // get kpm item
+            var kpmlist = document.getElementById('kpm');
+
+            var input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            // one file upload only
+            input.setAttribute('multiple', false);
+            input.style = "display:none";
+
+            input.click();
+
+            input.addEventListener('change', function () {
+                console.log('create new list');
+                /*
+                                    <div class="row" style="background-color: var(--md-sys-color-surface-container-high);">
+                                        <input type="file" name="" id="" style="display: none;">
+                                        <md-icon style="padding:10px">cake</md-icon>
+                                        <span style="flex:1; margin-left: 20px;">hello-kpm</span>
+                                        <md-icon-button type="button">
+                                            <md-icon>remove</md-icon>
+                                        </md-icon-button>
+                                    </div>
+                */
+
+                function isELF(bytes) {
+                    return bytes[0] === 0x7F && bytes[1] === 0x45 && bytes[2] === 0x4C && bytes[3] === 0x46;
+                }
+
+                if (input.files[0]) {
+                    var reader = new FileReader();
+
+                    reader.onloadend = function (event) {
+
+                        var bytes = new Uint8Array(event.target.result.slice(0, 4));
+
+                        if (!isELF(bytes)) {
+                            alert("This file seems not a kernel patch module");
+                            return;
+                        }
+
+                        // do a very simple check if start with .ELF
+                        var div = document.createElement('div');
+                        div.className = 'row';
+                        div.style = 'background-color: var(--md-sys-color-surface-container-high);';
+
+                        var icon = document.createElement('md-icon');
+                        icon.style = 'padding:10px';
+                        icon.textContent = 'cake';
+
+                        var span = document.createElement('span');
+                        span.style = 'flex:1; margin-left: 20px; overload:hidden';
+                        span.textContent = input.files[0].name;
+
+                        var button = document.createElement('md-icon-button');
+                        button.type = "button";
+
+                        // remove self
+                        button.addEventListener('click', function () {
+                            div.parentElement.removeChild(div);
+                        });
+
+                        var buttonIcon = document.createElement('md-icon');
+                        buttonIcon.textContent = 'remove';
+                        button.appendChild(buttonIcon);
+
+                        var infobutton = document.createElement('md-icon-button');
+                        infobutton.type = "button";
+
+                        var kpminfo = '';
+                        kptools(
+                                {
+                                    noInitialRun:true,
+                                    print: msg => {
+                                        kpminfo += msg + '\n';
+                                    }
+                                }
+                        ).then(
+                            function(mod) {
+                                const reader = new FileReader();
+
+                                reader.onload =  (event) => {
+                                    const data = new Uint8Array(event.target.result);
+                                    mod.FS.writeFile('/home/web_user/a.kpm', data);
+
+                                    mod.callMain(['-l', '-M', '/home/web_user/a.kpm']);
+                                };
+
+                                reader.readAsArrayBuffer(input.files[0]);
+                            }
+                        );
+
+                        infobutton.addEventListener('click', function () {
+                            function showDialog(info) {
+                                var dialog = document.getElementById('kpminfodialog');
+                                var content = document.getElementById('kpm-content');
+
+                                content.textContent = info;
+                                dialog.show();
+                            }
+
+                            showDialog(kpminfo);
+                        });
+                        var infoIcon = document.createElement('md-icon');
+                        infoIcon.textContent = 'info';
+                        infobutton.appendChild(infoIcon);
+
+                        div.appendChild(input);
+                        div.appendChild(icon);
+                        div.appendChild(span);
+                        div.appendChild(infobutton);
+                        div.appendChild(button);
+
+                        kpmlist.appendChild(div);
+
+                    }
+
+                    reader.readAsArrayBuffer(input.files[0].slice(0, 4));
+                }
+            });
+        });
+    </script>
+</body>
