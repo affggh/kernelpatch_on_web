@@ -177,4 +177,32 @@ jobs:
       - name: Cancel other jobs
         if: failure()
         uses: andymckay/cancel-action@0.4
-  
+
+  copy-web-source:
+    name: Copy HTML and JavaScript
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    needs: [build-kptools, build-magiskboot]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Copy source
+        run: |
+          cp -f web/* ${{ github.workspace }}/out/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: web_dist
+          path: ${{ github.workspace }}/out/*
+
+      # Fail fast
+      - name: Cancel other jobs
+        if: failure()
+        uses: andymckay/cancel-action@0.4
+      
