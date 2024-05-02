@@ -1,4 +1,8 @@
 {
     "cmake.configureOnOpen": true,
-    "cmake.cmakePath": "cmake"
+    "cmake.cmakePath": "D:\\msys64\\clang64\\bin\\cmake.exe",
+    "files.associations": {
+        "types.h": "c",
+        "stdbool.h": "c"
+    }
 }

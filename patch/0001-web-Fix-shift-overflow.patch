@@ -1,0 +1,26 @@
+From cda153ef524a932025133cbfb86c6c8c512d1221 Mon Sep 17 00:00:00 2001
+From: affggh <879632264@qq.com>
+Date: Thu, 2 May 2024 10:11:34 +0800
+Subject: [PATCH 1/2] web: Fix shift overflow
+
+---
+ tools/insn.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tools/insn.c b/tools/insn.c
+index e025cfa..444a6f6 100644
+--- a/tools/insn.c
++++ b/tools/insn.c
+@@ -106,7 +106,8 @@ static inline uint64_t hweight64(u64 w)
+  * position @h. For example
+  * GENMASK_ULL(39, 21) gives us the 64bit vector 0x000000ffffe00000.
+  */
+-#ifndef _WIN32
++#if !(defined _WIN32) && \
++    !(defined __EMSCRIPTEN__)
+ #define GENMASK(h, l) (((~0UL) << (l)) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+ #else 
+ #define GENMASK GENMASK_ULL
+-- 
+2.44.0
+

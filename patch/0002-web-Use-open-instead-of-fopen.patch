@@ -1,0 +1,95 @@
+From 34074a5cd430dbe56f08e74fc1bfbd40b5204060 Mon Sep 17 00:00:00 2001
+From: affggh <879632264@qq.com>
+Date: Thu, 2 May 2024 10:12:01 +0800
+Subject: [PATCH 2/2] web: Use open instead of fopen
+
+---
+ tools/common.c | 45 ++++++++++++++++++++++++++++++---------------
+ tools/common.h |  8 ++++++++
+ 2 files changed, 38 insertions(+), 15 deletions(-)
+
+diff --git a/tools/common.c b/tools/common.c
+index 8208d1b..5804f9a 100644
+--- a/tools/common.c
++++ b/tools/common.c
+@@ -39,28 +39,43 @@ int32_t relo_branch_func(const char *img, int32_t func_offset)
+ 
+ void read_file_align(const char *path, char **con, int *out_len, int align)
+ {
+-    FILE *fp = fopen(path, "rb");
+-    if (!fp) tools_log_errno_exit("open file %s\n", path);
+-    fseek(fp, 0, SEEK_END);
+-    int len = (int)ftell(fp);
+-    fseek(fp, 0, SEEK_SET);
+-    int align_len = (int)align_ceil(len, align);
+-    char *buf = (char *)malloc(align_len);
++    int fd = open(path, O_BINARY | O_RDONLY);
++    int len, align_len, read_len;
++    char *buf = NULL;
++    if (fd < 0)
++        tools_log_errno_exit("open file %s\n", path);
++
++    // Query file size
++    len = lseek(fd, 0, SEEK_END); lseek(fd, 0, SEEK_SET);
++
++    align_len = (int)align_ceil(len, align);
++    buf = (char*)malloc(align_len);
+     memset(buf + len, 0, align_len - len);
+-    int readlen = fread(buf, 1, len, fp);
+-    if (readlen != len) tools_log_errno_exit("read file %s\n", path);
+-    fclose(fp);
++
++    read_len = read(fd, buf, len);
++    if (read_len != len)
++        tools_log_errno_exit("read file %s\n", path);
++    
++    close(fd);
+     *con = buf;
+     *out_len = align_len;
+ }
+ 
+ void write_file(const char *path, const char *con, int len, bool append)
+ {
+-    FILE *fout = fopen(path, append ? "ab" : "wb");
+-    if (!fout) tools_log_errno_exit("open file %s\n", path);
+-    int writelen = fwrite(con, 1, len, fout);
+-    if (writelen != len) tools_log_errno_exit("write file %s\n", path);
+-    fclose(fout);
++    int flag = O_BINARY | O_WRONLY | (append ? O_APPEND : O_CREAT);
++
++    int fd = open(path, flag, 0644);
++    if (fd < 0)
++        tools_log_errno_exit("open file %s\n", path);
++    
++    int writelen = write(fd, con, len);
++    if (writelen != len) {
++        close(fd);
++        tools_log_errno_exit("write file %s\n", path);
++    }
++    
++    close(fd);
+ }
+ 
+ int64_t int_unpack(void *ptr, int32_t size, bool is_be)
+diff --git a/tools/common.h b/tools/common.h
+index 37fe969..c2cbb74 100644
+--- a/tools/common.h
++++ b/tools/common.h
+@@ -11,6 +11,14 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include <stdbool.h>
++#include <sys/types.h>
++#include <fcntl.h>
++#include <unistd.h>
++
++// Windows spec
++#ifndef O_BINARY
++#define O_BINARY 0
++#endif
+ 
+ #include <string.h>
+ 
+-- 
+2.44.0
+
