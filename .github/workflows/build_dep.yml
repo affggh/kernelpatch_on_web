@@ -1,0 +1,77 @@
+name: Build Dependencies
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug-build:
+        type: boolean
+        description: "Build in debug mode instead of release"
+
+env:
+  DEBUG: false  # 默认值为 false
+
+jobs:
+  build-wasm:
+    name: Build Kptools (WebAssembly)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    env:
+      emsdk_ver: 3.1.37
+      emsdk_cache_dir: "emsdk-cache"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+          
+      - name: Prepare (Host)
+        run: |
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -y curl tar file \
+                        build-essential pkg-config cmake ninja-build p7zip-full
+
+      - name: Cache (Emscripten)
+        id: cache-emsdk-system-libs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.emsdk_cache_dir }}
+          key: emsdk-${{ env.emsdk_ver }}-${{ runner.os }}
+
+      - name: Prepare (Emscripten)
+        uses: mymindstorm/setup-emsdk@v13
+        with:
+          version: ${{ env.emsdk_ver }}
+          actions-cache-folder: ${{ env.emsdk_cache_dir }}
+
+      - name: Build
+        run: |
+          emcmake cmake -G Ninja -B build \
+            && cmake --build build -j $(nproc) -v
+          emstrip build/kptools.wasm
+
+          file build/kptools*
+
+      - name: Pack
+        run: |
+          mkdir -p out
+          for i in $(find web/); do
+            cp -f "$i" "out/"
+          done
+
+          cp -f build/kptools* out/
+
+          cp -f out/kptools* ${{ github.workspace }}/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: kptools_emscripten_module
+          path: ${{ github.workspace }}/kptools.*
+
+      # Fail fast
+      - name: Cancel other jobs
+        if: failure()
+        uses: andymckay/cancel-action@0.4
