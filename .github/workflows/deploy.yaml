@@ -7,7 +7,7 @@ on:
         required: true
 
 env:
-  projname: "kernel-patch-on-web"
+  projname: "kernelpatch-on-web"
 
 jobs:
   deploy:
