@@ -59,16 +59,15 @@ jobs:
 
       - name: Pack
         run: |
-          mkdir -p out
-          cp -f build/kptools* out/
-          cp -f out/kptools* ${{ github.workspace }}/
+          mkdir -p ${{ github.workspace }}/out
+          cp -f build/kptools* ${{ github.workspace }}/out/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: kptools_emscripten_module
-          path: ${{ github.workspace }}/kptools.*
+          path: ${{ github.workspace }}/out/kptools.*
 
       # Fail fast
       - name: Cancel other jobs
@@ -164,15 +163,15 @@ jobs:
 
           file build/magiskboot*
 
-          mkdir out
-          cp -f build/magiskboot* ${{ github.workspace }}/
+          mkdir -p ${{ github.workspace }}/out
+          cp -f build/magiskboot* ${{ github.workspace }}/out/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: magiskboot_emscripten_module
-          path: ${{ github.workspace }}/magiskboot*
+          path: ${{ github.workspace }}/out/magiskboot*
 
       # Fail fast
       - name: Cancel other jobs
