@@ -134,16 +134,6 @@ jobs:
           . "$HOME/.cargo/env"
           rustup target add ${{ env.rust_target }}
 
-      - name: Synchronize (source)
-        uses: yogeshlonkar/wait-for-jobs@v0.2.1
-        with:
-          jobs: 'Prepare (source)'
-
-      - name: Prepare (source)
-        uses: actions/download-artifact@v4
-        with:
-          name: srcpkg
-
       - name: Build
         run: |
           python fetch_magiskboot_src.py
