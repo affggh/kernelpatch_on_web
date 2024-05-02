@@ -1,0 +1,268 @@
+name: Daliy update and deploy
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: 'Sync submodules'
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+
+    # Update references
+    - name: Git Submodule Update
+      run: |
+        git pull --recurse-submodules
+        git submodule update --init
+        git submodule update --remote --recursive --rebase --force
+
+    - name: Commit update
+      run: |
+        git config --global user.name 'Git bot'
+        git config --global user.email 'bot@noreply.github.com'
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git commit -am "Auto updated submodule references" && git push || echo "No changes to commit"
+
+  build-kptools:
+    name: Build Kptools (WebAssembly)
+    runs-on: ubuntu-latest
+    needs: [sync]
+    permissions:
+      actions: write
+    env:
+      emsdk_ver: 3.1.37
+      emsdk_cache_dir: "emsdk-cache"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          
+      - name: Prepare (Host)
+        run: |
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -y curl tar file \
+                        build-essential pkg-config cmake ninja-build p7zip-full
+
+      - name: Cache (Emscripten)
+        id: cache-emsdk-system-libs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.emsdk_cache_dir }}
+          key: emsdk-${{ env.emsdk_ver }}-${{ runner.os }}
+
+      - name: Prepare (Emscripten)
+        uses: mymindstorm/setup-emsdk@v13
+        with:
+          version: ${{ env.emsdk_ver }}
+          actions-cache-folder: ${{ env.emsdk_cache_dir }}
+
+      - name: Build
+        run: |
+          echo Apply patch
+          git apply --directory kp patch/*.patch
+          
+          echo Compile
+          emcmake cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release \
+            && cmake --build build -j $(nproc) -v
+          emstrip build/kptools.wasm
+
+          file build/kptools*
+
+      - name: Pack
+        run: |
+          mkdir -p ${{ github.workspace }}/out
+          cp -f build/kptools* ${{ github.workspace }}/out/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: kptools_emscripten_module
+          path: ${{ github.workspace }}/out/kptools.*
+
+      # Fail fast
+      - name: Cancel other jobs
+        if: failure()
+        uses: andymckay/cancel-action@0.4
+
+  # copy from https://github.com/ookiineko/magiskboot_build/blob/main/.github/workflows/ci.yaml
+  build-magiskboot:
+    name: Build Magiskboot (WebAssembly)
+    runs-on: ubuntu-latest
+    needs: [sync]
+    permissions:
+      actions: write
+    env:
+      vcpkg_triplet: "wasm32-emscripten"
+      emsdk_ver: 3.1.37
+      emsdk_cache_dir: "emsdk-cache"
+      rust_target: "wasm32-unknown-emscripten"
+      upload_suffix: "emscripten-wasm32-noderawfs-static"
+      cflags: "-fPIC"
+      cxxflags: "-fPIC"
+      ldflags: "-sFORCE_FILESYSTEM -sALLOW_MEMORY_GROWTH=1 -lproxyfs.js -lidbfs.js -sWASM=1 -sMODULARIZE=1 -sEXPORT_NAME=magiskboot -sEXPORTED_RUNTIME_METHODS=\"['FS','PROXYFS','out','err','ccall','cwrap','setValue','getValue','UTF8ToString','UTF8ArrayToString','stringToUTF8Array','FS_createPath','FS_createDataFile','removeRunDependency','addRunDependency','addFunction','safeSetTimeout','runtimeKeepalivePush','runtimeKeepalivePop','maybeExit','wasmMemory','wasmExports','callMain']\""
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          
+      - name: Prepare (Host)
+        run: |
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt install -y curl tar file \
+                        build-essential pkg-config cmake ninja-build
+
+      - name: Cache (Emscripten)
+        id: cache-emsdk-system-libs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.emsdk_cache_dir }}
+          key: emsdk-${{ env.emsdk_ver }}-${{ runner.os }}
+
+      - name: Prepare (Emscripten)
+        uses: mymindstorm/setup-emsdk@v13
+        with:
+          version: ${{ env.emsdk_ver }}
+          actions-cache-folder: ${{ env.emsdk_cache_dir }}
+
+      - name: Prepare (Environment)
+        run: |
+          echo "vcpkg_root=$VCPKG_INSTALLATION_ROOT" | tee -a $GITHUB_ENV
+
+      - name: Cache (Cross)
+        id: cache-cross-vcpkgs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.vcpkg_root }}/installed
+          key: cross-vcpkgs-v2-${{ env.vcpkg_triplet }}-emsdk-${{ env.emsdk_ver }}
+
+      - name: Prepare (Cross)
+        run: |
+          vcpkg install --host-triplet=${{ env.vcpkg_triplet }} \
+                        zlib liblzma lz4 'bzip2[core]'
+
+      - name: Prepare (Rust)
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.77.2
+          . "$HOME/.cargo/env"
+          rustup target add ${{ env.rust_target }}
+
+      - name: Build
+        run: |
+          python fetch_magiskboot_src.py
+          echo -e "\n### extract source ###\n"
+          tar -xf magiskboot_*-src.tar.xz
+
+          cd magiskboot_*-src/
+
+          echo -e "\n### configure ###\n"
+          . "$HOME/.cargo/env"
+          emcmake cmake -G Ninja -B build -DCMAKE_EXE_LINKER_FLAGS="${{ env.ldflags }}" \
+              -DCMAKE_C_FLAGS="${{ env.cflags }}" \
+              -DCMAKE_CXX_FLAGS="${{ env.cxxflags }}" \
+              -DRust_CARGO_TARGET=${{ env.rust_target }} -DFULL_RUST_LTO=OFF \
+              -DCMAKE_BUILD_TYPE=Release -DPREFER_STATIC_LINKING=ON \
+              -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake \
+              -DVCPKG_TARGET_TRIPLET=${{ env.vcpkg_triplet }} \
+              -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE="$(dirname $(which emcc))/cmake/Modules/Platform/Emscripten.cmake"
+
+          echo -e "\n### build ###\n"
+          cmake --build build -j $(nproc) -v
+          emstrip build/magiskboot*.wasm
+
+          file build/magiskboot*
+
+          mkdir -p ${{ github.workspace }}/out
+          cp -f build/magiskboot* ${{ github.workspace }}/out/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: magiskboot_emscripten_module
+          path: ${{ github.workspace }}/out/magiskboot*
+
+      # Fail fast
+      - name: Cancel other jobs
+        if: failure()
+        uses: andymckay/cancel-action@0.4
+
+  copy-web-source:
+    name: Copy HTML and JavaScript
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    needs: [build-kptools, build-magiskboot]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Copy source
+        run: |
+          mkdir -p ${{ github.workspace }}/out/
+          cp -f web/* ${{ github.workspace }}/out/
+
+      - name: Download kptools artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kptools_emscripten_module
+          path: ${{ github.workspace }}/out
+
+      - name: Download magiskboot artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: magiskboot_emscripten_module
+          path: ${{ github.workspace }}/out
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: web_dist
+          path: ${{ github.workspace }}/out/*
+
+      # Fail fast
+      - name: Cancel other jobs
+        if: failure()
+        uses: andymckay/cancel-action@0.4
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [copy-web-source]
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web_dist
+          path: ${{ github.workspace }}/dist
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy ${{ github.workspace }}/dist --project-name=kptools
