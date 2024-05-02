@@ -47,6 +47,10 @@ jobs:
 
       - name: Build
         run: |
+          echo Apply patch
+          git apply --directory kp patch/*.patch
+          
+          echo Compile
           emcmake cmake -G Ninja -B build \
             && cmake --build build -j $(nproc) -v
           emstrip build/kptools.wasm
