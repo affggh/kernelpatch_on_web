@@ -250,8 +250,8 @@
 
         patchbtn.addEventListener('click', function () {
             var worker = new Worker('./worker.js');
-            // precheck
-            ensureFileInput();
+
+            patchbtn.setAttribute('disabled', '1');
 
             if (superkey.value == '') {
                 alert('Please define super key');
@@ -291,6 +291,8 @@
                     if (event.data == 'done') {
                         // Terminate worker if recive messaage 'done'
                         worker.terminate();
+                        // re enable 
+                        ensureFileInput();
                     }
 
                     outputarea.value += event.data + '\n';
