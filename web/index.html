@@ -78,7 +78,8 @@
 
             <div class="surface" style="margin-bottom: 10px;">
                 <md-elevation></md-elevation>
-                <md-outlined-text-field type="text" style="margin: 5px;display: block;" label="Super key" id="superkey">
+                <md-outlined-text-field type="text" style="margin: 5px;display: block;" label="Super key" id="superkey"
+                                        error-text="The superkey must have at least one letter and no less than 8">
                     <md-icon slot="leading-icon">key</md-icon>
                 </md-outlined-text-field>
                 <input type="file" name="" id="bootimg" style="display: none;">
@@ -248,6 +249,23 @@
             kpimginput.click();
         });
 
+        superkey.addEventListener('input', function() {
+            if (!/[a-zA-Z]/.test(this.value)) {
+                if (!this.hasAttribute('error')) {
+                    this.setAttribute('error', '1');
+                }
+            } else if (this.value.length < 8) {
+                if (!this.hasAttribute('error')) {
+                    this.setAttribute('error', '1');
+                }
+            } else {
+                if (this.hasAttribute('error')) {
+                    this.removeAttribute('error');
+                }
+            }
+            ensureFileInput();
+        });
+
         patchbtn.addEventListener('click', function () {
             var worker = new Worker('./worker.js');
 
@@ -303,8 +321,13 @@
         });
 
         function ensureFileInput() {
-            if (fileinput.files[0] && kpimginput.files[0]) {
-                document.getElementById('patch').removeAttribute('disabled')
+            var patch = document.getElementById('patch');
+            if (fileinput.files[0] && kpimginput.files[0] && !superkey.hasAttribute('error')) {
+                patch.removeAttribute('disabled')
+            } else {
+                if (!patch.hasAttribute('disabled')) {
+                    patch.setAttribute('disabled', '1');
+                }
             }
         }
 
