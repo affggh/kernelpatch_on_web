@@ -23,18 +23,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: false
 
     # Update references
     - name: Git Submodule Update
       run: |
-        cd kp
-        git fetch --all
-        git checkout -b dev
-        git config pull.rebase false 
-        git pull origin dev
-        cd ..
-        git pull --recurse-submodules
+        git clone https://github.com/bmax121/kernel_patch -b dev kp
         git submodule update --init
         git submodule update --remote --recursive --rebase --force
 
