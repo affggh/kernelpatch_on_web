@@ -28,6 +28,8 @@ jobs:
     # Update references
     - name: Git Submodule Update
       run: |
+        git config --global user.name 'Git bot'
+        git config --global user.email 'bot@noreply.github.com'
         git clone https://github.com/bmax121/kernel_patch -b dev kp
         git submodule update --init
         git submodule update --remote --recursive --rebase --force
