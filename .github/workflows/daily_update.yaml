@@ -29,7 +29,8 @@ jobs:
     - name: Git Submodule Update
       run: |
         cd kp
-        git checkout dev
+        git fetch --all
+        git checkout dev || git checkout -b dev origin/dev
         cd ..
         git pull --recurse-submodules
         git submodule update --init
