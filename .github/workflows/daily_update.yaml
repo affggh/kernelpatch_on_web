@@ -31,6 +31,7 @@ jobs:
         cd kp
         git fetch --all
         git checkout dev || git checkout -b dev
+        git pull origin dev
         cd ..
         git pull --recurse-submodules
         git submodule update --init
