@@ -28,7 +28,10 @@ jobs:
     # Update references
     - name: Git Submodule Update
       run: |
-        git pull --recurse-submodules -b dev
+        git pull --recurse-submodules
+        cd kp
+        git checkout dev
+        cd ..
         git submodule update --init
         git submodule update --remote --recursive --rebase --force
 
