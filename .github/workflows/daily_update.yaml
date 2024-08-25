@@ -30,7 +30,8 @@ jobs:
       run: |
         cd kp
         git fetch --all
-        git checkout dev || git checkout -b dev
+        git checkout -b dev
+        git config pull.rebase true
         git pull origin dev
         cd ..
         git pull --recurse-submodules
