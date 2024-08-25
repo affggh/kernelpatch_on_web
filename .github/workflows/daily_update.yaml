@@ -29,7 +29,7 @@ jobs:
     - name: Git Submodule Update
       run: |
         git clone https://github.com/bmax121/KernelPatch -b dev kp
-        git submodule update --init
+        # git submodule update --init
         git submodule update --remote --recursive --rebase --force
 
     - name: Commit update
