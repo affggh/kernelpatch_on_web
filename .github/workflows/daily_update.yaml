@@ -30,7 +30,7 @@ jobs:
       run: |
         cd kp
         git fetch --all
-        git checkout dev || git checkout -b dev origin/dev
+        git checkout dev || git checkout -b dev
         cd ..
         git pull --recurse-submodules
         git submodule update --init
