@@ -35,9 +35,10 @@ jobs:
         git config user.name "Git bot"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Commit update
+    - name: Commit and push changes
       run: |
-        #git config --global user.name 'Git bot'
-        #git config --global user.email 'bot@noreply.github.com'
-        git remote set-url origin https://x-access-token:${{ secrets.MY_PAT_TOKEN }}@github.com/${{ github.repository }}
-        git commit -am "Auto updated submodule references" && git push || echo "No changes to commit"
+        git add .
+        git diff --cached --exit-code || git commit -m "Auto update submodules"
+        git push https://github.com/${{ github.repository }}.git HEAD:master  # 使用 token 推送
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_PAT_TOKEN }} 
