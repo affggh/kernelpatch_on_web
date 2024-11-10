@@ -8,6 +8,8 @@ jobs:
   sync:
     name: 'Sync submodules'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -20,6 +22,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: false
+        token: ${{ secrets.MY_PAT_TOKEN }}
 
     # Update references
     - name: Git Submodule Update
@@ -39,6 +42,4 @@ jobs:
       run: |
         git add .
         git diff --cached --exit-code || git commit -m "Auto update submodules"
-        git push https://github.com/${{ github.repository }}.git HEAD:master  # 使用 token 推送
-      env:
-        GITHUB_TOKEN: ${{ secrets.MY_PAT_TOKEN }} 
+        git push origin master  # 使用 token 推送
