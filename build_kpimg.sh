@@ -31,7 +31,7 @@ fetch_cross_toolchains() {
 
 
     if [ ! "$host" == "mingw-w64" ]; then
-        if [ ! "$arch" == "x86_64" ] || [ ! "$arch" == "aarch64" ]; then 
+        if [ ! "$arch" == "x86_64" ] && [ ! "$arch" == "aarch64" ]; then 
             abort "Can only cross compile at 64bit machine"
         fi
     fi
