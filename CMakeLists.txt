@@ -9,6 +9,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #set(CMAKE_C_COMPILER "clang")
 #set(CMAKE_CXX_COMPILER "clang++")
+add_subdirectory(zlib)
+# Missing include directory
+target_include_directories(zlib PUBLIC ${CMAKE_SOURCE_DIR}/zlib)
+target_include_directories(zlib PUBLIC ${CMAKE_BINARY_DIR}/zlib)
+target_include_directories(zlibstatic PUBLIC ${CMAKE_SOURCE_DIR}/zlib)
+target_include_directories(zlibstatic PUBLIC ${CMAKE_BINARY_DIR}/zlib)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     include(CheckIPOSupported)
@@ -72,12 +78,11 @@ if (BUILD_KPTOOLS)
 
     # if build for wasm, then build as a module
     if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
-        message("Detected Emscripten compiler")
+        message(STATUS "Detected Emscripten compiler")
         target_compile_options(kptools PUBLIC "-fPIC")
         target_link_options(kptools PUBLIC
             "-lproxyfs.js"
             "-lidbfs.js"
-            "-pre-js=${CMAKE_SOURCE_DIR}/src/preload.js"
             "-sMODULARIZE=1" 
             "-sEXPORT_NAME=kptools"
             "-sALLOW_MEMORY_GROWTH"
@@ -85,4 +90,6 @@ if (BUILD_KPTOOLS)
             "-sEXPORTED_RUNTIME_METHODS=['FS','PROXYFS','IDBFS','out','err','ccall','cwrap','setValue','getValue','UTF8ToString','UTF8ArrayToString','stringToUTF8Array','FS_createPath','FS_createDataFile','removeRunDependency','addRunDependency','addFunction','safeSetTimeout','runtimeKeepalivePush','runtimeKeepalivePop','maybeExit','wasmMemory','wasmExports','callMain']"
         )
     endif ()
+
+    target_link_libraries(kptools PUBLIC zlibstatic)
 endif ()

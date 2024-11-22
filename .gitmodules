@@ -2,3 +2,6 @@
 	path = kp
 	url = https://github.com/bmax121/KernelPatch
 	branch = dev
+[submodule "zlib"]
+	path = zlib
+	url = https://android.googlesource.com/platform/external/zlib
