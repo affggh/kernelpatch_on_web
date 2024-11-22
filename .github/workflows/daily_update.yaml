@@ -89,7 +89,7 @@ jobs:
           git apply --directory kp patch/*.patch
           
           echo Compile
-          emcmake cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release \
+          emcmake cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=Release \
             && cmake --build build -j $(nproc) -v
           emstrip build/kptools.wasm
 
