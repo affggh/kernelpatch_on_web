@@ -195,7 +195,7 @@ jobs:
           emcmake cmake -G Ninja -B build -DCMAKE_EXE_LINKER_FLAGS="${{ env.ldflags }}" \
               -DCMAKE_C_FLAGS="${{ env.cflags }}" \
               -DCMAKE_CXX_FLAGS="${{ env.cxxflags }}" \
-              -DRust_CARGO_TARGET=${{ env.rust_target }} -DFULL_RUST_LTO=OFF \
+              -DRust_CARGO_TARGET=${{ env.rust_target }} -DFULL_RUST_LTO=OFF Rust_TOOLCHAIN=${{ env.rust_target }} \
               -DCMAKE_BUILD_TYPE=Release -DPREFER_STATIC_LINKING=ON \
               -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake \
               -DVCPKG_TARGET_TRIPLET=${{ env.vcpkg_triplet }} \
