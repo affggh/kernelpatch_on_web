@@ -55,7 +55,7 @@ jobs:
     permissions:
       actions: write
     env:
-      #emsdk_ver: 3.1.37
+      emsdk_ver: latest
       emsdk_cache_dir: "emsdk-cache"
 
     steps:
