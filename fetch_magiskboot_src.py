@@ -2,7 +2,7 @@ from urllib import request
 import json
 import os
 
-API = "https://api.github.com/repos/ookiineko/magiskboot_build/releases/latest"
+API = "https://api.github.com/repos/CircleCashTeam/magiskboot_build/releases/latest"
 
 # fetch magiskboot source
 resp = request.urlopen(API)
