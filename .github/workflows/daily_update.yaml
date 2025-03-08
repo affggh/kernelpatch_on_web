@@ -89,7 +89,8 @@ jobs:
           echo Apply patch
           git apply --allow-empty --directory kp patch/*.patch
           # zlib patch
-          git apply --allow-empty --directory zlib/patch/zlib/*.patch
+          echo 
+          git apply --allow-empty --directory zlib zlib/patch/zlib/*.patch
           
           # compile
           echo Compile
