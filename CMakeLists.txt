@@ -9,12 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #set(CMAKE_C_COMPILER "clang")
 #set(CMAKE_CXX_COMPILER "clang++")
+set(SKIP_INSTALL_ALL ON)
 add_subdirectory(zlib)
 # Missing include directory
 target_include_directories(zlib PUBLIC ${CMAKE_SOURCE_DIR}/zlib)
 target_include_directories(zlib PUBLIC ${CMAKE_BINARY_DIR}/zlib)
-target_include_directories(zlibstatic PUBLIC ${CMAKE_SOURCE_DIR}/zlib)
-target_include_directories(zlibstatic PUBLIC ${CMAKE_BINARY_DIR}/zlib)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     include(CheckIPOSupported)
@@ -91,5 +90,5 @@ if (BUILD_KPTOOLS)
         )
     endif ()
 
-    target_link_libraries(kptools PUBLIC zlibstatic)
+    target_link_libraries(kptools PUBLIC zlib)
 endif ()

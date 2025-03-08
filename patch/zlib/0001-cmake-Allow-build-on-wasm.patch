@@ -1,0 +1,56 @@
+From 4d10fb0a248d10b2b64631120fa4fee5028a783b Mon Sep 17 00:00:00 2001
+From: affggh <879632264@qq.com>
+Date: Sat, 8 Mar 2025 20:53:52 +0800
+Subject: [PATCH] cmake: Allow build on wasm
+
+---
+ CMakeLists.txt | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 66f7d04..8b8e5dc 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -249,10 +249,15 @@ if(MINGW)
+     set(ZLIB_DLL_SRCS ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj)
+ endif(MINGW)
+ 
++if(CMAKE_SYSTEM_NAME STREQUAL Emscripten)
++# build static zlib library for wasm
++add_library(zlib STATIC ${ZLIB_SRCS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
++else()
+ add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+ add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+ set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
+ set_target_properties(zlib PROPERTIES SOVERSION 1)
++endif()
+ 
+ if(NOT CYGWIN)
+     # This property causes shared libraries on Linux to have the full version
+@@ -267,7 +272,9 @@ endif()
+ 
+ if(UNIX)
+     # On unix-like platforms the library is almost always called libz
++  if(NOT CMAKE_SYSTEM_NAME STREQUAL Emscripten)
+    set_target_properties(zlib zlibstatic PROPERTIES OUTPUT_NAME z)
++  endif()
+    if(NOT APPLE)
+      set_target_properties(zlib PROPERTIES LINK_FLAGS "-Wl,--version-script,\"${CMAKE_CURRENT_SOURCE_DIR}/zlib.map\"")
+    endif()
+@@ -295,11 +302,12 @@ endif()
+ #============================================================================
+ # Benchmarker
+ #============================================================================
++if (NOT CMAKE_SYSTEM_NAME STREQUAL Emscripten)
+ enable_language(CXX)
+ set(CMAKE_CXX_STANDARD 14) # workaround for older compilers (e.g. g++ 5.4).
+ add_executable(zlib_bench contrib/bench/zlib_bench.cc)
+ target_link_libraries(zlib_bench zlib)
+-
++endif()
+ #============================================================================
+ # Unit Tests
+ #============================================================================
+-- 
+2.48.1
+
