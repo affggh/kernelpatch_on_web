@@ -55,7 +55,7 @@ jobs:
     permissions:
       actions: write
     env:
-      emsdk_ver: 3.1.37
+      #emsdk_ver: 3.1.37
       emsdk_cache_dir: "emsdk-cache"
 
     steps:
@@ -70,29 +70,34 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt install -y curl tar file \
                         build-essential pkg-config cmake ninja-build p7zip-full
 
-      - name: Cache (Emscripten)
-        id: cache-emsdk-system-libs
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.emsdk_cache_dir }}
-          key: emsdk-${{ env.emsdk_ver }}-${{ runner.os }}
+      #- name: Cache (Emscripten)
+      #  id: cache-emsdk-system-libs
+      #  uses: actions/cache@v4
+      #  with:
+      #    path: ${{ env.emsdk_cache_dir }}
+      #    key: emsdk-${{ env.emsdk_ver }}-${{ runner.os }}
 
       - name: Prepare (Emscripten)
         uses: mymindstorm/setup-emsdk@v13
         with:
           version: ${{ env.emsdk_ver }}
-          actions-cache-folder: ${{ env.emsdk_cache_dir }}
+          #actions-cache-folder: ${{ env.emsdk_cache_dir }}
 
       - name: Build
         run: |
+          # apply patches
           echo Apply patch
           git apply --directory kp patch/*.patch
+          # zlib patch
+          git apply --directory zlib/patch/zlib/*.patch
           
+          # compile
           echo Compile
-          emcmake cmake -G "Unix Makefiles" -B build -DCMAKE_BUILD_TYPE=Release \
+          emcmake cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release \
             && cmake --build build -j $(nproc) -v
           emstrip build/kptools.wasm
 
+          # show informations
           file build/kptools*
 
       - name: Pack
